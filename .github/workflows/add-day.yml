@@ -1,0 +1,129 @@
+name: 导入每日题目
+
+# 两种触发方式：
+#   1) 往 inbox/ 里放一个 .tsv 文件并提交 —— 自动导入
+#   2) 在 Actions 页面点「Run workflow」，填文件名手动导入
+on:
+  push:
+    paths:
+      - "inbox/*.tsv"
+  workflow_dispatch:
+    inputs:
+      file:
+        description: "inbox 里的文件名，例如 inbox/2026-11-03.tsv"
+        required: true
+      date:
+        description: "日期 YYYY-MM-DD（留空则从文件名推断，再不行用今天）"
+        required: false
+      title:
+        description: "标题（留空用「每日词句」）"
+        required: false
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: import-day
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Shanghai
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 找出这次要导入的文件
+        id: pick
+        env:
+          IN_FILE: ${{ inputs.file }}
+        run: |
+          set -euo pipefail
+          files=""
+          if [ -n "${IN_FILE}" ]; then
+            files="${IN_FILE}"
+          else
+            files=$(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" | grep -E '^inbox/.*\.tsv$' || true)
+          fi
+          if [ -z "${files}" ]; then
+            echo "::error::没有找到 inbox 下的 .tsv 文件，检查路径是否正确"
+            exit 1
+          fi
+          {
+            echo "files<<EOF"
+            echo "$files"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "待导入："
+          echo "$files"
+
+      - name: 导入并重建索引
+        env:
+          FILES: ${{ steps.pick.outputs.files }}
+          IN_DATE: ${{ inputs.date }}
+          IN_TITLE: ${{ inputs.title }}
+        run: |
+          set -euo pipefail
+
+          # 用数组传参，标题里有空格也不会被拆开
+          extra=()
+          if [ -n "${IN_TITLE}" ]; then
+            extra+=(--title "${IN_TITLE}")
+          fi
+
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if [ ! -f "$f" ]; then
+              echo "::error::文件不存在：$f"
+              exit 1
+            fi
+
+            stamp=""
+            if [ -n "${IN_DATE}" ]; then
+              stamp="${IN_DATE}"
+            else
+              base=$(basename "$f" .tsv)
+              if echo "$base" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+                stamp="${base}"
+              fi
+            fi
+
+            args=()
+            if [ -n "$stamp" ]; then
+              args+=(--date "${stamp}")
+            fi
+
+            echo "→ 导入 ${f} ${args[*]:-（用今天）} ${extra[*]:-}"
+            python scripts/build.py import "$f" "${args[@]}" "${extra[@]}"
+          done <<< "${FILES}"
+
+          python scripts/build.py check
+
+      - name: 提交结果
+        id: commit
+        run: |
+          set -euo pipefail
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "数据没有变化，跳过提交"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data
+          git commit -m "data: 导入 $(date +%F) 的题目"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: 让 Pages 重新构建
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds" --silent
