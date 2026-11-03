@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FAF7F2">
+<title>今日のJLPT · 每日单词语法自测</title>
+<meta name="description" content="每天推送的单词和语法，用中日对照释义自测一遍。">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icon.svg">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="mark jp">漢</span>
+      <div class="brand-txt">
+        <h1>今日のJLPT</h1>
+        <p>单词 · 语法 中日对照自测</p>
+      </div>
+    </div>
+    <div class="streak" id="streak" title="连续学习天数">
+      <span class="streak-num" id="streakNum">0</span>
+      <span class="streak-lbl">连续</span>
+    </div>
+  </header>
+
+  <nav class="daynav" id="daynav" aria-label="选择日期"></nav>
+
+  <main id="main" aria-live="polite"></main>
+
+  <footer class="foot">
+    <span id="footNote">数据放在 data/days/ 里，改一次 commit 一次。</span>
+  </footer>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-box">
+    <h2>粘贴今日清单</h2>
+    <p class="hint">从对话里复制 TSV（制表符分隔，首行是表头），直接贴进来就能开始测。<br>
+      列顺序：type · jp · reading · pos · cn · alt · example · exampleCn · tags</p>
+    <textarea id="pasteArea" spellcheck="false" placeholder="把 TSV 直接粘到这里，首行表头留着也行、删掉也行。"></textarea>
+    <div class="modal-actions">
+      <button class="btn ghost" id="pasteCancel">取消</button>
+      <button class="btn primary" id="pasteOk">导入并开始</button>
+    </div>
+    <p class="err" id="pasteErr" hidden></p>
+  </div>
+</div>
+
+<script src="data/bundle.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "今日のJLPT",
+  "short_name": "JLPT",
+  "description": "每天推送的单词和语法，用中日对照释义自测一遍。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAF7F2",
+  "theme_color": "#FAF7F2",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
