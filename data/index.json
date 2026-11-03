@@ -8,22 +8,28 @@
       "grammar": 8
     },
     {
+      "date": "2026-11-03",
+      "title": "N1 每日 40+10",
+      "words": 40,
+      "grammar": 10
+    },
+    {
       "date": "2026-11-02",
-      "title": "N2 词汇 + 语法",
-      "words": 10,
+      "title": "N1 每日 13+3",
+      "words": 13,
       "grammar": 3
     },
     {
       "date": "2026-11-01",
-      "title": "N2 词汇 + 语法",
-      "words": 10,
-      "grammar": 2
+      "title": "N1 每日 13+3",
+      "words": 13,
+      "grammar": 3
     },
     {
       "date": "2026-10-31",
-      "title": "示例（TSV 导入）",
-      "words": 3,
-      "grammar": 1
+      "title": "N1 每日 13+3",
+      "words": 13,
+      "grammar": 3
     }
   ]
 }
