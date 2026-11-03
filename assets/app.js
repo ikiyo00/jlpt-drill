@@ -6,6 +6,7 @@
   const K_SESSIONS = "jlpt-drill:sessions:v1";
   const K_PREFS = "jlpt-drill:prefs:v1";
   const K_LOCAL = "jlpt-drill:localdays:v1";
+  const K_SW = "jlpt-drill:sw:v1";
 
   const FALLBACK = {
     word: [
@@ -110,7 +111,36 @@
   }
 
   /* ---------------- data ---------------- */
+  function registerSW() {
+    // file:// 下注册不了 Service Worker，但那时本来就是纯本地、不需要网络
+    if (!("serviceWorker" in navigator)) return;
+    if (!/^https?:$/.test(location.protocol)) return;
+
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").then((reg) => {
+        if (!localStorage.getItem(K_SW)) {
+          localStorage.setItem(K_SW, "1");
+          if (reg.active) toast("已缓存到本地，之后断网也能刷题");
+        }
+      }).catch(() => {});
+    });
+  }
+
+  function toast(text) {
+    let el = document.getElementById("swToast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "swToast";
+      el.className = "sw-toast";
+      document.body.appendChild(el);
+    }
+    el.textContent = text;
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 3200);
+  }
+
   async function boot() {
+    registerSW();
     state.localDays = readJSON(K_LOCAL, {});
     const prefs = readJSON(K_PREFS, { mode: "choice" });
     state.mode = prefs.mode === "type" ? "type" : "choice";
@@ -324,17 +354,24 @@
     </div>`;
   }
 
+  /* 每个选项都带一个 source：正确项 source 是本题的日语词；
+     干扰项若来自当天的其他词条，source 就是那个词条（jp+reading），
+     否则是 null（纯通用干扰项，不在今日词表里）。 */
   function buildOptions(item) {
     const same = state.items
-      .filter((x) => x.type === item.type && x.id !== item.id)
-      .map((x) => x.cn)
-      .filter((c) => c && c !== item.cn);
-    const extra = FALLBACK[item.type] || FALLBACK.word;
-    const pool = Array.from(new Set([...same, ...extra]))
-      .filter((c) => c !== item.cn);
+      .filter((x) => x.type === item.type && x.id !== item.id && x.cn && x.cn !== item.cn)
+      .map((x) => ({ cn: x.cn, jp: x.jp, reading: x.reading, source: x }));
+    // 按 cn 去重，避免同一中文释义出现两次
+    const uniq = Array.from(new Set(same.map((o) => o.cn)))
+      .map((cn) => same.find((o) => o.cn === cn));
+    const extra = (FALLBACK[item.type] || FALLBACK.word)
+      .filter((c) => c && c !== item.cn)
+      .map((c) => ({ cn: c, jp: "", reading: "", source: null }));
+    const pool = [...uniq, ...extra];
     const picked = shuffle(pool).slice(0, 3);
-    while (picked.length < 3) picked.push("—");
-    return shuffle([item.cn, ...picked]);
+    while (picked.length < 3) picked.push({ cn: "—", jp: "", reading: "", source: null });
+    const correct = { cn: item.cn, jp: item.jp, reading: item.reading, source: item };
+    return shuffle([correct, ...picked]);
   }
 
   function viewQuiz() {
@@ -362,13 +399,27 @@
       const opts = state.options || (state.options = buildOptions(item));
       body = opts.map((o, i) => {
         let cls = "opt";
+        let pairing = "";
         if (ans) {
-          if (o === item.cn) cls += " correct";
-          else if (o === ans.value) cls += " wrong";
+          if (o.cn === item.cn) cls += " correct";
+          else if (o.cn === ans.value) cls += " wrong";
           else cls += " dim";
+          // 不论对错，每个选项都亮出它对应的日语来源
+          if (o.source && o.jp) {
+            const isSelf = o.source === item;
+            pairing = `<span class="opt-pair ${isSelf ? "self" : ""}">`
+              + `<span class="opt-eq">＝</span>`
+              + `<b class="opt-jp jp">${esc(o.source.jp)}</b>`
+              + (o.source.reading ? `<span class="opt-rd">${esc(o.source.reading)}</span>` : "")
+              + `</span>`;
+          } else {
+            pairing = `<span class="opt-pair muted"><span class="opt-eq">＝</span>通用干扰项（不在今日词表）</span>`;
+          }
         }
         return `<button class="${cls}" data-act="choose" data-i="${i}" ${ans ? "disabled" : ""}>
-          <span class="key">${"ABCD"[i]}</span><span>${esc(o)}</span></button>`;
+          <span class="key">${"ABCD"[i]}</span>
+          <span class="opt-main"><span class="opt-cn">${esc(o.cn)}</span>${pairing}</span>
+        </button>`;
       }).join("");
     } else {
       body = `${ans
@@ -380,11 +431,29 @@
 
     let feedback = "";
     if (ans) {
+      // 选错了，且选中的是「其他词条的中文释义」时，把它对应的日语亮出来
+      let distractor = "";
+      if (!ans.ok && state.mode === "choice") {
+        const chosen = (state.options || []).find((o) => o.cn === ans.value);
+        if (chosen) {
+          if (chosen.source && chosen.jp) {
+            distractor = `<p class="distractor-info">
+              <span class="di-label">你选的「${esc(chosen.cn)}」其实是：</span>
+              <b class="di-jp jp">${esc(chosen.jp)}</b>${chosen.reading ? `<span class="di-rd">${esc(chosen.reading)}</span>` : ""}
+            </p>`;
+          } else {
+            distractor = `<p class="distractor-info muted">
+              <span class="di-label">你选的「${esc(chosen.cn)}」是干扰项，不在今天的词表里。</span>
+            </p>`;
+          }
+        }
+      }
       feedback = `<div class="feedback">
         <p class="verdict ${ans.ok ? "ok" : "no"}">
           <span class="ico">${ans.ok ? "✓" : "✕"}</span>${ans.ok ? "答对了" : (ans.skipped ? "看答案" : "再看一遍")}
         </p>
         <p class="def">${esc(item.cn)}</p>
+        ${distractor}
         ${item.example ? `<div class="example">
           <p class="jp-s jp">${esc(item.example)}</p>
           <p class="cn-s">${esc(item.exampleCn || "")}</p>
@@ -647,7 +716,8 @@
     if (act === "choose") {
       if (state.current) return;
       const item = state.queue[state.idx];
-      const val = (state.options || [])[+t.getAttribute("data-i")];
+      const opt = (state.options || [])[+t.getAttribute("data-i")];
+      const val = opt ? opt.cn : "";
       answer(val, val === item.cn, false);
       return;
     }

@@ -394,6 +394,14 @@ body {
 }
 .opt.wrong .key { background: var(--bad); color: #fff; }
 .opt.dim { opacity: .5; }
+.opt-main { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.opt-cn { font-size: 14.5px; }
+.opt-pair { font-size: 12px; line-height: 1.45; color: var(--muted); margin-top: 1px; }
+.opt-pair .opt-eq { margin-right: 3px; color: #B6AC9E; }
+.opt-pair .opt-jp { font-size: 14px; font-weight: 600; color: #C0392B; margin: 0 2px; }
+.opt-pair.self .opt-jp { color: var(--ok); }
+.opt-pair .opt-rd { font-size: 11px; color: var(--muted); letter-spacing: .05em; }
+.opt-pair.muted { color: #A79E92; font-style: italic; }
 
 .answer-input {
   width: 100%;
@@ -437,6 +445,35 @@ body {
   color: #fff;
 }
 .verdict.ok .ico { background: var(--ok); }
+
+/* 选错后，亮出该中文释义本来的日语词 */
+.distractor-info {
+  margin: 2px 0 12px;
+  padding: 9px 12px;
+  background: #FBF2EF;
+  border: 1px solid #F0D7D0;
+  border-radius: 10px;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.distractor-info.muted {
+  background: #F6F2EC;
+  border-color: var(--line);
+  color: var(--muted);
+}
+.distractor-info .di-label { color: #B07163; }
+.distractor-info.muted .di-label { color: var(--muted); }
+.distractor-info .di-jp {
+  font-size: 18px;
+  font-weight: 600;
+  color: #C0392B;
+  margin: 0 5px;
+}
+.distractor-info .di-rd {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: .06em;
+}
 .verdict.no .ico { background: var(--bad); }
 
 .def {
@@ -555,6 +592,25 @@ kbd {
 }
 .modal-box textarea:focus { border-color: var(--accent); }
 .modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 14px; }
+
+.sw-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  transform: translate(-50%, 12px);
+  z-index: 60;
+  max-width: 88vw;
+  padding: 9px 15px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #fff;
+  background: rgba(28, 26, 24, .92);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s ease, transform .22s ease;
+}
+.sw-toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 @media (max-width: 420px) {
   .app { padding: 14px 13px 36px; }
