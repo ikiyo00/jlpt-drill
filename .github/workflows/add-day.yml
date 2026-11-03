@@ -34,6 +34,8 @@ jobs:
       TZ: Asia/Shanghai
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -49,7 +51,7 @@ jobs:
           if [ -n "${IN_FILE}" ]; then
             files="${IN_FILE}"
           else
-            files=$(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" | grep -E '^inbox/.*\.tsv$' || true)
+            files=$(git diff-tree --no-commit-id --name-only -r "${GITHUB_SHA}" | grep -E '^inbox/.*\.tsv$' || true)
           fi
           if [ -z "${files}" ]; then
             echo "::error::没有找到 inbox 下的 .tsv 文件，检查路径是否正确"
