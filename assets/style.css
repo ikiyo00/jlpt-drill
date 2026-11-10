@@ -612,8 +612,68 @@ kbd {
 }
 .sw-toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* ---------- 假名注音 ---------- */
+ruby.fg { ruby-position: over; }
+ruby.fg rt {
+  font-size: 10.5px;
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--muted);
+  text-align: center;
+}
+.word { line-height: 1.55; }
+.word ruby.fg rt { font-size: 15px; }
+.opt-pair ruby.fg rt,
+.di-jp ruby.fg rt,
+.example ruby.fg rt,
+.wronglist ruby.fg rt,
+.bl-jp ruby.fg rt { font-size: 10px; }
+
+/* ---------- 错题本 ---------- */
+.book-note {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.75;
+  margin: 10px 0 4px;
+}
+.booklist {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  border-top: 1px solid var(--line-soft);
+}
+.booklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.booklist li:last-child { border-bottom: 0; }
+.bl-main { flex: 1; min-width: 0; }
+.bl-jp { font-size: 17px; line-height: 1.5; }
+.bl-cn { font-size: 13px; color: var(--ink-2); }
+.bl-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.bl-x {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.bl-x:hover { border-color: var(--bad); color: var(--bad); }
+
 @media (max-width: 420px) {
   .app { padding: 14px 13px 36px; }
   .card { padding: 18px; }
   .btn-row { flex-direction: column; }
+  .booklist { max-height: 340px; }
 }

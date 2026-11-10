@@ -7,7 +7,7 @@
  * 这样每天新增一天的数据，联网打开就是新的；断网时至少昨天的内容还在。
  */
 
-const VERSION = "jlpt-drill-v2";
+const VERSION = "jlpt-drill-v3";
 
 const SHELL = [
   "./",
